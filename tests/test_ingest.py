@@ -53,3 +53,33 @@ def test_missing_header_fields_default_sensibly():
     assert document.study == "Bare"
     assert document.participants == ()
     assert len(chunks) == 1
+
+
+TRANSCRIPT = """# Interview
+
+Moderator:
+What did you check before paying?
+
+Participant P01:
+"The total."
+
+Participant P02:
+"Nothing."
+
+Researcher observation:
+Most checked the total.
+
+Participant P03:
+"Unprompted comment."
+"""
+
+
+def test_moderator_questions_become_context_not_chunks():
+    _, chunks = parse_document("t", TRANSCRIPT)
+
+    assert [(c.id, c.speaker, c.context) for c in chunks] == [
+        ("t#1", "P01", "What did you check before paying?"),
+        ("t#2", "P02", "What did you check before paying?"),
+        ("t#3", "", ""),
+        ("t#4", "P03", ""),  # an observation ends the moderator's question
+    ]

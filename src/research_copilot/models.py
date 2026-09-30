@@ -23,6 +23,7 @@ class Chunk:
     speaker: str  # participant ID for quotes, "" otherwise
     label: str  # the block header as written, e.g. "Participant P63 (Day 2)"
     text: str
+    context: str = ""  # the moderator question this answers, in transcripts
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class Source:
     kind: str
     speaker: str
     quote: str
+    context: str = ""
 
 
 @dataclass(frozen=True)

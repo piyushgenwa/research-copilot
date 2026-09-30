@@ -39,6 +39,19 @@ export TYPESAFE_DEFAULT_MODEL=jev-latest   # optional
 - **Routing**: a Choice between `catalog`, `aggregate` and `retrieve`. Below 0.6 confidence, or on error, the rule-based router decides.
 - **Evidence filter**: each retrieved excerpt gets three Nouls (relevant, contains answer evidence, prompt injection) and is kept only if relevant ≥ 0.45, evidence > 0.55 and injection ≤ 0.70. If nothing passes, the answer is `insufficient_evidence` without calling the LLM. On error an excerpt is kept.
 
+## Web app
+
+`/` serves a single-page app:
+
+- **Ask**: a chat-style view. Each question is answered independently; answers show a status, limitations and collapsible sources, and each source links to its place in the transcript.
+- **Library**: every study as a card (method, date, participants, excerpts), filterable by text, participant ID or method. Opening a study shows the transcript with moderator questions, participant quotes and researcher observations, plus a link to the raw markdown.
+
+Library endpoints: `GET /api/studies`, `GET /api/studies/{id}`, `GET /api/studies/{id}/markdown`.
+
+## Data format
+
+Each file in `data/` is one study: a `# Title`, optional `Study:`, `Date:`, `Method:`, `Participants:` fields, then blocks headed `Participant P12:`, `Respondent R3 (Score 9):`, `Researcher observation:` or `Moderator:`. Moderator questions are not indexed as evidence; they are attached as context to the answers that follow.
+
 ## How it works
 
 Single question in, single answer out (`POST /ask`).
