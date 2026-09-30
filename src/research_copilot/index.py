@@ -25,6 +25,9 @@ class ResearchIndex:
         self.documents: dict[str, Document] = {d.id: d for d in documents}
         self.chunks: list[Chunk] = list(chunks)
         self.chunks_by_id: dict[str, Chunk] = {c.id: c for c in self.chunks}
+        self.chunks_by_doc: dict[str, list[Chunk]] = defaultdict(list)
+        for chunk in self.chunks:
+            self.chunks_by_doc[chunk.doc_id].append(chunk)
 
         self._postings: dict[str, list[tuple[int, int]]] = defaultdict(list)
         self._lengths: list[int] = []
@@ -32,7 +35,7 @@ class ResearchIndex:
             # Title and label are indexed with the text so a quote that never says
             # "checkout" still matches when it comes from a checkout study, and
             # participant IDs ("P17") are searchable.
-            terms = tokenize(f"{chunk.title} {chunk.label} {chunk.text}")
+            terms = tokenize(f"{chunk.title} {chunk.label} {chunk.context} {chunk.text}")
             self._lengths.append(len(terms))
             for term, count in Counter(terms).items():
                 self._postings[term].append((position, count))

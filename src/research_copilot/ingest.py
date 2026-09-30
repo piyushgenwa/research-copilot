@@ -22,6 +22,7 @@ from .models import Chunk, Document
 _BLOCK_HEADER = re.compile(r"^([A-Za-z][A-Za-z ]*?)(?:\s+([A-Z]\d+))?(?:\s*\(([^)]*)\))?:$")
 _FIELD = re.compile(r"^([A-Za-z]+):\s+(.+)$")
 _QUOTE_LABELS = {"participant", "respondent"}
+_MODERATOR_LABELS = {"moderator", "interviewer", "researcher"}
 
 
 def parse_document(doc_id: str, text: str) -> tuple[Document, list[Chunk]]:
@@ -43,6 +44,8 @@ def parse_document(doc_id: str, text: str) -> tuple[Document, list[Chunk]]:
             role_key = role.strip().lower()
             if role_key in _QUOTE_LABELS:
                 kind = "quote"
+            elif role_key in _MODERATOR_LABELS:
+                kind = "moderator"
             elif "observation" in role_key:
                 kind = "observation"
             else:
@@ -70,19 +73,31 @@ def parse_document(doc_id: str, text: str) -> tuple[Document, list[Chunk]]:
         participants=participants,
     )
 
-    chunks = [
-        Chunk(
-            id=f"{doc_id}#{n}",
-            doc_id=doc_id,
-            title=title,
-            kind=kind,
-            speaker=speaker,
-            label=label,
-            text=" ".join(block_lines),
+    chunks: list[Chunk] = []
+    question = ""
+    for label, kind, speaker, block_lines in blocks:
+        if not block_lines:
+            continue
+        text = " ".join(block_lines)
+        # Moderator turns are not evidence; they give context to the answers
+        # that follow, until the next moderator turn or observation.
+        if kind == "moderator":
+            question = text
+            continue
+        if kind != "quote":
+            question = ""
+        chunks.append(
+            Chunk(
+                id=f"{doc_id}#{len(chunks) + 1}",
+                doc_id=doc_id,
+                title=title,
+                kind=kind,
+                speaker=speaker,
+                label=label,
+                text=text,
+                context=question,
+            )
         )
-        for n, (label, kind, speaker, block_lines) in enumerate(blocks, start=1)
-        if block_lines
-    ]
     return document, chunks
 
 

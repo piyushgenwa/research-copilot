@@ -6,154 +6,309 @@
 <title>Research Copilot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
 <style>
+  /* Design tokens: aubergine ink, white paper, electric blue and mint accents,
+     light serif display type paired with a geometric sans. */
   :root {
-    --bg: #f6f5f2; --surface: #ffffff; --surface-2: #efede8; --text: #1c1b19;
-    --muted: #6d6b64; --border: #e3e0d8; --accent: #3b5bdb; --accent-soft: #e8edff;
-    --user-bubble: #1c1b19; --user-text: #ffffff;
-    --ok: #1f7a4d; --ok-soft: #e3f4ea; --warn: #8a5300; --warn-soft: #fbf0dc;
-    --bad: #a8321f; --bad-soft: #fbe6e1;
-    --shadow: 0 1px 2px rgba(20, 18, 12, .04), 0 4px 16px rgba(20, 18, 12, .05);
+    --ink: #1b1126;
+    --ink-72: rgba(27, 17, 38, .72);
+    --ink-56: rgba(27, 17, 38, .56);
+    --line: rgba(27, 17, 38, .14);
+    --wash: rgba(27, 17, 38, .04);
+    --paper: #ffffff;
+    --canvas: #faf9fb;
+    --blue: #2d62ff;
+    --blue-wash: rgba(45, 98, 255, .08);
+    --mint: #7cf0a8;
+    --mint-ink: #0f3d24;
+    --glow: rgba(94, 62, 255, .35);
+    --ok: #177a4a; --ok-wash: #e2f7ea;
+    --warn: #8a5300; --warn-wash: #fdf1dc;
+    --bad: #b0301c; --bad-wash: #fde8e3;
+    --header: #1b1126; --header-text: #ffffff; --header-muted: rgba(255, 255, 255, .64);
+    --shadow: 0 1px 2px rgba(27, 17, 38, .04), 0 8px 24px rgba(27, 17, 38, .06);
+    --serif: "Newsreader", Georgia, serif;
+    --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #131312; --surface: #1c1c1a; --surface-2: #252522; --text: #ecebe5;
-      --muted: #9d9b93; --border: #302f2b; --accent: #8aa2ff; --accent-soft: #232a45;
-      --user-bubble: #ecebe5; --user-text: #131312;
-      --ok: #6fcf9a; --ok-soft: #173024; --warn: #e6b25c; --warn-soft: #33270f;
-      --bad: #f19483; --bad-soft: #3a1f19;
+      --ink: #f3eff8; --ink-72: rgba(243, 239, 248, .74); --ink-56: rgba(243, 239, 248, .56);
+      --line: rgba(243, 239, 248, .12); --wash: rgba(243, 239, 248, .05);
+      --paper: #231a2f; --canvas: #1b1126;
+      --blue: #7d9bff; --blue-wash: rgba(125, 155, 255, .14);
+      --ok: #7fdcaa; --ok-wash: rgba(127, 220, 170, .12);
+      --warn: #f0bf6a; --warn-wash: rgba(240, 191, 106, .12);
+      --bad: #ff9c88; --bad-wash: rgba(255, 156, 136, .12);
+      --header: #140c1d;
       --shadow: none;
+      color-scheme: dark;
     }
   }
+
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0; background: var(--canvas); color: var(--ink);
+    font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
     display: flex; flex-direction: column;
   }
-  header {
-    border-bottom: 1px solid var(--border); background: var(--bg);
-    padding: 14px 16px; position: sticky; top: 0; z-index: 2;
-  }
-  .bar { max-width: 780px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
-  .logo {
-    width: 28px; height: 28px; border-radius: 8px; background: var(--accent);
-    display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 14px;
-  }
-  header h1 { font-size: 16px; font-weight: 600; margin: 0; }
-  header .tag { margin-left: auto; font-size: 13px; color: var(--muted); }
+  button, input, textarea { font: inherit; color: inherit; }
+  a { color: var(--blue); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; width: 100%; }
+  .narrow { max-width: 780px; }
 
-  #thread { flex: 1; overflow-y: auto; padding: 24px 16px 16px; }
-  .inner { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-
-  .empty { text-align: center; padding: 8vh 0 0; }
-  .empty h2 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -.01em; }
-  .empty p { color: var(--muted); margin: 0 0 26px; }
-  .suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; text-align: left; }
-  .suggestions button {
-    font: inherit; text-align: left; cursor: pointer; color: var(--text);
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 12px 14px; box-shadow: var(--shadow); transition: border-color .15s, transform .15s;
+  /* Header */
+  header { background: var(--header); color: var(--header-text); position: sticky; top: 0; z-index: 10; }
+  header .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 600; letter-spacing: -.01em; }
+  .mark { width: 26px; height: 26px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; }
+  .mark svg { width: 14px; height: 14px; }
+  nav { display: flex; gap: 4px; }
+  nav a {
+    color: var(--header-muted); text-decoration: none; font-size: 15px;
+    padding: 6px 12px; border-radius: 5px;
   }
-  .suggestions button:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .suggestions small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+  nav a:hover { color: var(--header-text); }
+  nav a[aria-current="page"] { color: var(--header-text); background: rgba(255, 255, 255, .1); }
+  header .meta { margin-left: auto; font-size: 13px; color: var(--header-muted); }
+
+  main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .view { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .view.active { display: flex; }
+
+  /* Shared type */
+  .eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-56); margin: 0 0 10px; }
+  .display { font-family: var(--serif); font-weight: 300; letter-spacing: -.015em; line-height: 1.08; margin: 0; }
+  .display em { font-style: normal; font-family: var(--sans); font-weight: 400; letter-spacing: -.02em; }
+  .lede { color: var(--ink-72); margin: 12px 0 0; max-width: 560px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+    padding: 3px 10px; border-radius: 999px; background: var(--wash); color: var(--ink-72);
+    border: 1px solid var(--line); white-space: nowrap;
+  }
+  .chip svg { width: 13px; height: 13px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; text-decoration: none;
+    padding: 10px 16px; border-radius: 5px; font-size: 15px; font-weight: 500;
+  }
+  .btn.primary { background: var(--mint); color: var(--mint-ink); }
+  .btn.primary:hover { filter: brightness(.95); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { background: var(--wash); }
+
+  /* Ask view */
+  #thread { flex: 1; overflow-y: auto; padding: 32px 0 16px; position: relative; }
+  .messages { display: flex; flex-direction: column; gap: 22px; }
+  .hero { position: relative; text-align: center; padding: 7vh 0 12px; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0 10% auto; height: 240px; z-index: -1;
+    background: radial-gradient(closest-side, var(--glow), transparent); filter: blur(30px); opacity: .5;
+  }
+  .hero .display { font-size: clamp(36px, 6vw, 56px); }
+  .hero .lede { margin: 14px auto 32px; }
+  .suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; text-align: left; }
+  .suggestion {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+    cursor: pointer; text-align: left; box-shadow: var(--shadow); transition: border-color .15s, transform .15s;
+  }
+  .suggestion:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .suggestion .eyebrow { margin-bottom: 6px; font-size: 11px; }
+  .suggestion span:last-child { display: block; font-weight: 500; }
 
   .msg { display: flex; }
   .msg.user { justify-content: flex-end; }
   .msg.user .bubble {
-    background: var(--user-bubble); color: var(--user-text); border-radius: 16px 16px 4px 16px;
-    padding: 10px 14px; max-width: 80%; white-space: pre-wrap; word-wrap: break-word;
+    background: var(--ink); color: var(--canvas); border-radius: 14px 14px 4px 14px;
+    padding: 10px 16px; max-width: 78%; white-space: pre-wrap; overflow-wrap: anywhere;
   }
   .msg.bot .bubble {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px;
-    padding: 14px 16px; max-width: 100%; width: 100%; box-shadow: var(--shadow);
+    width: 100%; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 14px 14px 14px 4px; padding: 18px 20px; box-shadow: var(--shadow);
   }
-  .chip {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
-    padding: 2px 10px; border-radius: 999px; margin-bottom: 8px;
-  }
-  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .chip.answered { color: var(--ok); background: var(--ok-soft); }
-  .chip.partial, .chip.evidence_only { color: var(--warn); background: var(--warn-soft); }
-  .chip.insufficient_evidence, .chip.error { color: var(--bad); background: var(--bad-soft); }
+  .status { margin-bottom: 10px; }
+  .status.answered { color: var(--ok); background: var(--ok-wash); border-color: transparent; }
+  .status.partial, .status.evidence_only { color: var(--warn); background: var(--warn-wash); border-color: transparent; }
+  .status.insufficient_evidence, .status.error { color: var(--bad); background: var(--bad-wash); border-color: transparent; }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .answer { white-space: pre-wrap; margin: 0; }
-  .limits { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); color: var(--muted); font-size: 13px; }
+  .limit { margin-top: 12px; font-size: 14px; color: var(--ink-72); background: var(--wash); border-radius: 8px; padding: 8px 12px; }
 
-  details { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
-  summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); list-style: none; }
-  summary::-webkit-details-marker { display: none; }
-  summary::before { content: "▸ "; }
-  details[open] summary::before { content: "▾ "; }
-  .sources { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-  .source { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
-  .source .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .source .meta strong { color: var(--text); font-weight: 600; }
-  .source .who { padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .source .id { margin-left: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
-  .source blockquote { margin: 0; font-size: 14px; border-left: 3px solid var(--accent); padding-left: 10px; }
+  details.sources { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  details.sources summary { cursor: pointer; list-style: none; font-size: 13px; font-weight: 500; color: var(--ink-72); }
+  details.sources summary::-webkit-details-marker { display: none; }
+  details.sources summary::after { content: " ▾"; }
+  details.sources[open] summary::after { content: " ▴"; }
+  .source-list { display: grid; gap: 8px; margin-top: 12px; }
+  .source {
+    display: block; text-decoration: none; color: inherit; border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; background: var(--canvas); transition: border-color .15s;
+  }
+  .source:hover { border-color: var(--blue); }
+  .source-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+  .source-meta strong { font-weight: 500; }
+  .source-meta .open { margin-left: auto; color: var(--blue); font-size: 12px; }
+  .speaker { background: var(--blue-wash); color: var(--blue); border-color: transparent; font-weight: 600; }
+  .quote { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.5; }
+  .asked { font-size: 13px; color: var(--ink-56); margin: 0 0 4px; }
 
-  .typing { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); font-size: 13px; }
-  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
-  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  .typing { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-56); font-size: 14px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: pulse 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
   .typing span { margin-left: 6px; }
-  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  @keyframes pulse { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
 
-  footer { padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+  .composer-wrap { padding: 12px 0 calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--canvas) 28%); }
   .composer {
-    max-width: 780px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 8px 8px 8px 14px; box-shadow: var(--shadow);
+    display: flex; gap: 8px; align-items: flex-end; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 12px; padding: 8px 8px 8px 16px; box-shadow: var(--shadow);
   }
-  .composer:focus-within { border-color: var(--accent); }
-  textarea {
-    flex: 1; border: 0; outline: 0; resize: none; background: transparent; color: var(--text);
-    font: inherit; max-height: 180px; padding: 6px 0; line-height: 1.5;
+  .composer:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-wash); }
+  .composer textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; max-height: 180px; padding: 7px 0; line-height: 1.5; }
+  .send { width: 40px; height: 40px; border: 0; border-radius: 8px; background: var(--mint); color: var(--mint-ink); cursor: pointer; display: grid; place-items: center; flex: none; }
+  .send:disabled { opacity: .35; cursor: default; }
+  .hint { text-align: center; font-size: 12px; color: var(--ink-56); margin: 8px 0 0; }
+
+  /* Library view */
+  .page { overflow-y: auto; flex: 1; padding: 44px 0 64px; }
+  .library-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px; justify-content: space-between; }
+  .library-head .display { font-size: clamp(34px, 5vw, 48px); }
+  .stats { display: flex; gap: 28px; }
+  .stat b { display: block; font-family: var(--serif); font-weight: 300; font-size: 32px; line-height: 1; }
+  .stat span { font-size: 13px; color: var(--ink-56); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 20px; }
+  .search {
+    flex: 1 1 260px; display: flex; align-items: center; gap: 8px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 8px; padding: 0 12px;
   }
-  .send {
-    width: 38px; height: 38px; border: 0; border-radius: 10px; cursor: pointer; flex: none;
-    background: var(--accent); color: #fff; display: grid; place-items: center;
+  .search:focus-within { border-color: var(--blue); }
+  .search input { border: 0; outline: 0; background: transparent; padding: 10px 0; width: 100%; }
+  .search svg { width: 16px; height: 16px; color: var(--ink-56); flex: none; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filter { cursor: pointer; }
+  .filter[aria-pressed="true"] { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+  .card {
+    display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px;
+    box-shadow: var(--shadow); transition: border-color .15s, transform .15s;
   }
-  .send:disabled { opacity: .4; cursor: default; }
-  .hint { max-width: 780px; margin: 6px auto 0; text-align: center; font-size: 12px; color: var(--muted); }
-  @media (max-width: 560px) { .msg.user .bubble { max-width: 90%; } header .tag { display: none; } }
+  .card:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .card h3 { font-family: var(--serif); font-weight: 400; font-size: 21px; line-height: 1.2; margin: 0; }
+  .card .foot { margin-top: auto; display: flex; gap: 14px; font-size: 13px; color: var(--ink-56); }
+  .empty-state { color: var(--ink-56); padding: 40px 0; text-align: center; }
+
+  /* Study view */
+  .back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-72); text-decoration: none; margin-bottom: 22px; }
+  .back:hover { color: var(--ink); }
+  .study-head .display { font-size: clamp(32px, 5vw, 46px); margin: 6px 0 14px; }
+  .study-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--ink-72); }
+  .participants { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 8px; }
+  .transcript { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 28px; display: grid; gap: 14px; }
+  .turn { border-radius: 10px; padding: 16px 18px; background: var(--paper); border: 1px solid var(--line); scroll-margin-top: 90px; transition: box-shadow .3s, border-color .3s; }
+  .turn.moderator { background: transparent; border-style: dashed; color: var(--ink-72); font-size: 15px; }
+  .turn.observation, .turn.note { background: var(--blue-wash); border-color: transparent; }
+  .turn .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-56); margin-bottom: 8px; }
+  .turn .who .id { margin-left: auto; font-family: var(--mono); font-size: 11px; }
+  .turn.highlight { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-wash); }
+  .turn p { margin: 0; }
+  .turn.quote p { font-family: var(--serif); font-size: 18px; line-height: 1.5; }
+
+  @media (max-width: 640px) {
+    header .meta { display: none; }
+    header .wrap { gap: 14px; }
+    .msg.user .bubble { max-width: 90%; }
+    .stats { gap: 18px; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <div class="bar">
-    <div class="logo" aria-hidden="true">R</div>
-    <h1>Research Copilot</h1>
-    <span class="tag">Answers grounded in your UX research</span>
+  <div class="wrap">
+    <a class="brand" href="#/">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 16 16" fill="#1b1126"><path d="M3 4.5A2.5 2.5 0 0 1 5.5 2h5A2.5 2.5 0 0 1 13 4.5v4A2.5 2.5 0 0 1 10.5 11H8l-3 3v-3.2A2.5 2.5 0 0 1 3 8.5z"/></svg>
+      </span>
+      Research Copilot
+    </a>
+    <nav aria-label="Main">
+      <a href="#/" data-nav="ask">Ask</a>
+      <a href="#/library" data-nav="library">Library</a>
+    </nav>
+    <span class="meta" id="corpus-meta"></span>
   </div>
 </header>
 
-<main id="thread" aria-live="polite">
-  <div class="inner" id="messages">
-    <div class="empty" id="empty">
-      <h2>What do you want to know?</h2>
-      <p>Ask about the research. Every answer cites the studies and quotes it comes from.</p>
-      <div class="suggestions">
-        <button type="button"><small>Findings</small>Why do users abandon checkout?</button>
-        <button type="button"><small>Check a hypothesis</small>Did people find checkout frustrating?</button>
-        <button type="button"><small>Catalog</small>Which studies covered payments?</button>
-        <button type="button"><small>Out of scope</small>What do users think about dark mode?</button>
+<main>
+  <!-- Ask -->
+  <section class="view" id="view-ask" aria-label="Ask">
+    <div id="thread">
+      <div class="wrap narrow messages" id="messages">
+        <div class="hero" id="hero">
+          <p class="eyebrow">Research Copilot</p>
+          <h1 class="display">Ask your research <em>anything</em></h1>
+          <p class="lede">Answers come only from your studies, and every claim links back to the participant quote it came from.</p>
+          <div class="suggestions">
+            <button class="suggestion" type="button"><span class="eyebrow">Findings</span><span>Why do users abandon checkout?</span></button>
+            <button class="suggestion" type="button"><span class="eyebrow">Check a hypothesis</span><span>Do people trust one-tap express checkout?</span></button>
+            <button class="suggestion" type="button"><span class="eyebrow">Themes</span><span>What are the most common complaints about delivery?</span></button>
+            <button class="suggestion" type="button"><span class="eyebrow">Out of scope</span><span>What do users think about dark mode?</span></button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</main>
+    <div class="composer-wrap">
+      <div class="wrap narrow">
+        <form class="composer" id="composer">
+          <label for="input" class="sr-only">Ask a question about the research</label>
+          <textarea id="input" rows="1" maxlength="2000" placeholder="Ask a question about the research…"></textarea>
+          <button class="send" id="send" type="submit" aria-label="Send" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+        </form>
+        <p class="hint">Each question is answered on its own. Enter to send, Shift+Enter for a new line.</p>
+      </div>
+    </div>
+  </section>
 
-<footer>
-  <form class="composer" id="composer">
-    <label for="input" class="sr-only" style="position:absolute;left:-9999px">Ask a question</label>
-    <textarea id="input" rows="1" maxlength="2000" placeholder="Ask a question about the research…"></textarea>
-    <button class="send" id="send" type="submit" aria-label="Send" disabled>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </button>
-  </form>
-  <p class="hint">Each question is answered on its own from the research corpus. Enter to send, Shift+Enter for a new line.</p>
-</footer>
+  <!-- Library -->
+  <section class="view" id="view-library" aria-label="Library">
+    <div class="page">
+      <div class="wrap">
+        <div class="library-head">
+          <div>
+            <p class="eyebrow">Research library</p>
+            <h1 class="display">Every study, <em>every voice</em></h1>
+            <p class="lede">Browse the transcripts and notes behind the answers.</p>
+          </div>
+          <div class="stats" id="stats"></div>
+        </div>
+        <div class="toolbar">
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span class="sr-only">Filter studies</span>
+            <input id="filter" type="search" placeholder="Filter by title, method or participant (e.g. P17)">
+          </label>
+          <div class="filters" id="method-filters" role="group" aria-label="Filter by method"></div>
+        </div>
+        <div class="grid" id="study-grid"></div>
+        <p class="empty-state" id="no-results" hidden>No studies match that filter.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Study -->
+  <section class="view" id="view-study" aria-label="Study">
+    <div class="page">
+      <div class="wrap narrow" id="study"></div>
+    </div>
+  </section>
+</main>
 
 <script>
   const STATUS = {
@@ -163,113 +318,284 @@
     evidence_only: "Evidence only, no summary",
     error: "Something went wrong",
   };
-  const thread = document.getElementById("thread");
-  const messages = document.getElementById("messages");
-  const empty = document.getElementById("empty");
-  const composer = document.getElementById("composer");
-  const input = document.getElementById("input");
-  const send = document.getElementById("send");
+  const ICONS = {
+    "Interviews": '<path d="M4 5h12v8H9l-4 3v-3H4z"/><path d="M16 9h4v8h-1v3l-4-3h-4"/>',
+    "Usability test": '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    "Diary study": '<path d="M6 3h11a1 1 0 0 1 1 1v17H7a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1z"/><path d="M9 7h6M9 11h6"/>',
+    "Survey": '<path d="M9 5h10M9 12h10M9 19h10"/><path d="m4 5 1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/>',
+    "Concept test": '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    "AI-moderated": '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><rect x="7" y="7" width="10" height="10" rx="2"/>',
+    "Field study": '<path d="M12 21s-6-5.4-6-11a6 6 0 1 1 12 0c0 5.6-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+  };
+
+  const $ = (id) => document.getElementById(id);
+  let studies = null;
+  let methodFilter = null;
   let busy = false;
 
   function el(tag, props = {}, children = []) {
     const node = Object.assign(document.createElement(tag), props);
-    for (const child of children) node.append(child);
+    for (const child of children) if (child != null) node.append(child);
     return node;
   }
+  function icon(name) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "1.8");
+    svg.setAttribute("stroke-linecap", "round"); svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = ICONS[name] || ICONS["Interviews"];  // static, trusted markup
+    return svg;
+  }
+  function methodType(method) {
+    const m = (method || "").toLowerCase();
+    if (m.includes("ai-moderated")) return "AI-moderated";
+    if (m.includes("diary")) return "Diary study";
+    if (m.includes("survey")) return "Survey";
+    if (m.includes("concept")) return "Concept test";
+    if (m.includes("contextual") || m.includes("pickup points") || m.includes("homes")) return "Field study";
+    if (m.includes("usability") || m.includes("first-click")) return "Usability test";
+    return "Interviews";
+  }
+  function methodChip(method) {
+    const type = methodType(method);
+    return el("span", { className: "chip", title: method || type }, [icon(type), type]);
+  }
+  function formatDate(value) {
+    if (!value) return "";
+    const date = new Date(value + "T00:00:00");
+    return isNaN(date) ? value : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+  function studyLink(docId, chunkId) {
+    return `#/study/${encodeURIComponent(docId)}` + (chunkId ? `?at=${encodeURIComponent(chunkId)}` : "");
+  }
+
+  async function loadStudies() {
+    if (!studies) {
+      const response = await fetch("/api/studies");
+      if (!response.ok) throw new Error(`Could not load studies (${response.status})`);
+      studies = await response.json();
+      const people = new Set(studies.flatMap((s) => s.participants));
+      $("corpus-meta").textContent = `${studies.length} studies · ${people.size} participants`;
+    }
+    return studies;
+  }
+
+  /* ---------- Router ---------- */
+  function route() {
+    const hash = location.hash || "#/";
+    const [path, query = ""] = hash.slice(1).split("?");
+    const params = new URLSearchParams(query);
+    let name = "ask";
+    if (path === "/library") name = "library";
+    else if (path.startsWith("/study/")) name = "study";
+
+    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${name}`));
+    document.querySelectorAll("nav a").forEach((a) => {
+      const current = a.dataset.nav === (name === "study" ? "library" : name);
+      current ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
+    });
+
+    if (name === "library") renderLibrary();
+    if (name === "study") renderStudy(decodeURIComponent(path.slice("/study/".length)), params.get("at"));
+    if (name === "ask") $("input").focus();
+  }
+  window.addEventListener("hashchange", route);
+
+  /* ---------- Ask ---------- */
+  const thread = $("thread"), messages = $("messages"), input = $("input"), send = $("send");
 
   function scrollDown() { thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" }); }
-
-  function addMessage(role, content) {
-    empty.remove();
-    const bubble = el("div", { className: "bubble" }, content);
+  function addMessage(role, children) {
+    $("hero")?.remove();
+    const bubble = el("div", { className: "bubble" }, children);
     messages.append(el("div", { className: `msg ${role}` }, [bubble]));
     scrollDown();
     return bubble;
   }
-
   function sourceCard(source) {
-    const who = source.kind === "quote" ? source.speaker
-      : source.kind === "document" ? "Study" : "Researcher";
-    const card = el("div", { className: "source" }, [
-      el("div", { className: "meta" }, [
-        el("span", { className: "who", textContent: who }),
+    const who = source.kind === "quote" ? source.speaker : source.kind === "document" ? "Study" : "Researcher";
+    return el("a", { className: "source", href: studyLink(source.doc_id, source.kind === "document" ? null : source.chunk_id) }, [
+      el("div", { className: "source-meta" }, [
+        el("span", { className: "chip speaker", textContent: who }),
         el("strong", { textContent: source.title }),
-        el("span", { className: "id", textContent: source.chunk_id }),
+        el("span", { className: "open", textContent: "Open transcript →" }),
       ]),
+      source.context ? el("p", { className: "asked", textContent: `Asked: ${source.context}` }) : null,
+      source.quote ? el("p", { className: "quote", textContent: source.quote }) : null,
     ]);
-    if (source.quote) card.append(el("blockquote", { textContent: source.quote }));
-    return card;
   }
-
   function renderAnswer(bubble, data) {
     const status = data.status in STATUS ? data.status : "error";
     const parts = [
-      el("span", { className: `chip ${status}`, textContent: STATUS[status] }),
+      el("span", { className: `chip status ${status}`, textContent: STATUS[status] }),
       el("p", { className: "answer", textContent: data.answer || "" }),
+      ...(data.limitations || []).map((note) => el("div", { className: "limit", textContent: note })),
     ];
-    for (const note of data.limitations || []) parts.push(el("div", { className: "limits", textContent: note }));
     const sources = data.sources || [];
     if (sources.length) {
-      const details = el("details", {}, [
+      const details = el("details", { className: "sources", open: status === "evidence_only" }, [
         el("summary", { textContent: `${sources.length} source${sources.length === 1 ? "" : "s"}` }),
-        el("div", { className: "sources" }, sources.map(sourceCard)),
+        el("div", { className: "source-list" }, sources.map(sourceCard)),
       ]);
-      // Evidence-only answers are nothing but sources, so show them straight away.
-      if (status === "evidence_only") details.open = true;
       parts.push(details);
     }
     bubble.replaceChildren(...parts);
     scrollDown();
   }
-
   async function ask(question) {
-    if (busy || !question.trim()) return;
-    busy = true;
-    send.disabled = true;
-    addMessage("user", [question.trim()]);
+    question = question.trim();
+    if (busy || !question) return;
+    busy = true; send.disabled = true;
+    addMessage("user", [question]);
     const bubble = addMessage("bot", [
       el("span", { className: "typing" }, [el("i"), el("i"), el("i"), el("span", { textContent: "Searching the research…" })]),
     ]);
     try {
       const response = await fetch("/ask", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question: question.trim() }),
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question }),
       });
       if (!response.ok) throw new Error(`The server returned ${response.status}. Please try again.`);
       renderAnswer(bubble, await response.json());
     } catch (error) {
       renderAnswer(bubble, { status: "error", answer: error.message });
     } finally {
-      busy = false;
-      send.disabled = !input.value.trim();
-      input.focus();
+      busy = false; autosize(); input.focus();
     }
   }
-
   function autosize() {
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 180) + "px";
     send.disabled = busy || !input.value.trim();
   }
-
   input.addEventListener("input", autosize);
   input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-      event.preventDefault();
-      composer.requestSubmit();
-    }
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); $("composer").requestSubmit(); }
   });
-  composer.addEventListener("submit", (event) => {
+  $("composer").addEventListener("submit", (event) => {
     event.preventDefault();
     const question = input.value;
-    input.value = "";
-    autosize();
+    input.value = ""; autosize();
     ask(question);
   });
-  document.querySelectorAll(".suggestions button").forEach((button) =>
-    button.addEventListener("click", () => ask(button.lastChild.textContent)));
-  input.focus();
+  document.querySelectorAll(".suggestion").forEach((button) =>
+    button.addEventListener("click", () => ask(button.lastElementChild.textContent)));
+
+  /* ---------- Library ---------- */
+  async function renderLibrary() {
+    const grid = $("study-grid");
+    if (!studies) grid.replaceChildren(el("p", { className: "empty-state", textContent: "Loading studies…" }));
+    let all;
+    try { all = await loadStudies(); }
+    catch (error) { grid.replaceChildren(el("p", { className: "empty-state", textContent: error.message })); return; }
+
+    const people = new Set(all.flatMap((s) => s.participants));
+    const excerpts = all.reduce((sum, s) => sum + s.excerpt_count, 0);
+    $("stats").replaceChildren(
+      ...[[all.length, "Studies"], [people.size, "Participants"], [excerpts, "Excerpts"]].map(([n, label]) =>
+        el("div", { className: "stat" }, [el("b", { textContent: n }), el("span", { textContent: label })])));
+
+    const types = [...new Set(all.map((s) => methodType(s.method)))].sort();
+    $("method-filters").replaceChildren(...[null, ...types].map((type) => {
+      const button = el("button", { type: "button", className: "chip filter", textContent: type || "All methods" });
+      button.setAttribute("aria-pressed", String(methodFilter === type));
+      button.addEventListener("click", () => { methodFilter = type; renderLibrary(); });
+      return button;
+    }));
+
+    const term = $("filter").value.trim().toLowerCase();
+    const shown = all.filter((s) =>
+      (!methodFilter || methodType(s.method) === methodFilter) &&
+      (!term || [s.title, s.study, s.method, s.id, ...s.participants].join(" ").toLowerCase().includes(term)));
+
+    grid.replaceChildren(...shown.map((s) => el("a", { className: "card", href: studyLink(s.id) }, [
+      el("div", {}, [methodChip(s.method)]),
+      el("h3", { textContent: s.title }),
+      el("div", { className: "foot" }, [
+        el("span", { textContent: formatDate(s.date) || "Undated" }),
+        el("span", { textContent: `${s.participants.length} participants` }),
+        el("span", { textContent: `${s.excerpt_count} excerpts` }),
+      ]),
+    ])));
+    $("no-results").hidden = shown.length > 0;
+  }
+  $("filter").addEventListener("input", renderLibrary);
+
+  /* ---------- Study ---------- */
+  async function renderStudy(docId, focusId) {
+    const root = $("study");
+    root.replaceChildren(el("p", { className: "empty-state", textContent: "Loading transcript…" }));
+    let study;
+    try {
+      const response = await fetch(`/api/studies/${encodeURIComponent(docId)}`);
+      if (response.status === 404) throw new Error("That study doesn't exist.");
+      if (!response.ok) throw new Error(`Could not load the study (${response.status}).`);
+      study = await response.json();
+    } catch (error) {
+      root.replaceChildren(el("a", { className: "back", href: "#/library", textContent: "← All studies" }),
+        el("p", { className: "empty-state", textContent: error.message }));
+      return;
+    }
+
+    const turns = [];
+    let lastContext = "";
+    for (const excerpt of study.excerpts) {
+      if (excerpt.context && excerpt.context !== lastContext) {
+        turns.push(el("div", { className: "turn moderator" }, [
+          el("div", { className: "who", textContent: "Moderator" }), el("p", { textContent: excerpt.context }),
+        ]));
+      }
+      lastContext = excerpt.context;
+      const note = excerpt.label.match(/\(([^)]*)\)/);
+      const who = excerpt.kind === "quote" ? excerpt.speaker : excerpt.label;
+      turns.push(el("div", { className: `turn ${excerpt.kind}`, id: excerpt.chunk_id }, [
+        el("div", { className: "who" }, [
+          excerpt.kind === "quote" ? el("span", { className: "chip speaker", textContent: who }) : el("span", { textContent: who }),
+          note ? el("span", { textContent: note[1] }) : null,
+          el("span", { className: "id", textContent: excerpt.chunk_id }),
+        ]),
+        el("p", { textContent: excerpt.text }),
+      ]));
+    }
+
+    root.replaceChildren(
+      el("a", { className: "back", href: "#/library", textContent: "← All studies" }),
+      el("div", { className: "study-head" }, [
+        methodChip(study.method),
+        el("h1", { className: "display", textContent: study.title }),
+        el("div", { className: "study-meta" }, [
+          study.date ? el("span", { textContent: formatDate(study.date) }) : null,
+          study.method ? el("span", { textContent: study.method }) : null,
+          el("span", { textContent: `${study.excerpt_count} excerpts` }),
+        ]),
+        el("div", { className: "participants" },
+          study.participants.map((p) => el("span", { className: "chip speaker", textContent: p }))),
+      ]),
+      el("div", { className: "actions" }, [
+        el("button", {
+          type: "button", className: "btn primary", textContent: "Ask about this study",
+          onclick: () => { location.hash = "#/"; input.value = `In ${study.title}, `; autosize(); input.focus(); },
+        }),
+        el("a", { className: "btn ghost", href: `/api/studies/${encodeURIComponent(study.id)}/markdown`, target: "_blank", rel: "noopener", textContent: "View markdown" }),
+      ]),
+      el("div", { className: "transcript" }, turns),
+    );
+
+    if (focusId) {
+      const target = document.getElementById(focusId);
+      if (target) {
+        target.classList.add("highlight");
+        // Instant jump: a smooth scroll gets cancelled by layout shifts (e.g. web fonts loading).
+        requestAnimationFrame(() => target.scrollIntoView({ block: "center" }));
+      }
+    } else {
+      root.parentElement.scrollTo({ top: 0 });
+    }
+  }
+
+  loadStudies().catch(() => {});
+  route();
 </script>
 </body>
 </html>

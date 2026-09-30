@@ -109,7 +109,8 @@ def build_prompt(question: str, hits: list[ScoredChunk], aggregate: bool = False
     excerpts = "\n".join(
         f'<excerpt id="{hit.chunk.id}" study="{hit.chunk.title}" '
         f'speaker="{hit.chunk.speaker or "researcher"}" kind="{hit.chunk.kind}">\n'
-        f"{hit.chunk.text}\n</excerpt>"
+        + (f"[In answer to: {hit.chunk.context}]\n" if hit.chunk.context else "")
+        + f"{hit.chunk.text}\n</excerpt>"
         for hit in hits
     )
     aggregate_rule = (
@@ -237,4 +238,5 @@ def _source(hit: ScoredChunk) -> Source:
         kind=chunk.kind,
         speaker=chunk.speaker,
         quote=chunk.text,
+        context=chunk.context,
     )
