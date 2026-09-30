@@ -13,6 +13,14 @@ def test_health():
     assert response.json() == {"status": "ok"}
 
 
+def test_home_serves_the_question_page():
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert 'id="composer"' in response.text
+
+
 def test_ask_without_llm_returns_evidence(monkeypatch):
     monkeypatch.setattr(api, "llm", api.StubLLM())
 

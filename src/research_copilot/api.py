@@ -2,7 +2,10 @@ import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .assistant import answer_question
@@ -44,6 +47,14 @@ classifier = build_classifier()
 
 class QuestionRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
+
+
+INDEX_HTML = (Path(__file__).parent / "static" / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def home():
+    return INDEX_HTML
 
 
 @app.get("/health")
