@@ -63,7 +63,7 @@
 
   /* Header */
   header { background: var(--header); color: var(--header-text); position: sticky; top: 0; z-index: 10; }
-  header .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+  header .wrap { display: flex; align-items: center; gap: 28px; height: 60px; max-width: none; padding: 0 18px; }
   .brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 600; letter-spacing: -.01em; }
   .mark { width: 26px; height: 26px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; }
   .mark svg { width: 14px; height: 14px; }
@@ -173,6 +173,45 @@
   .send:disabled { opacity: .35; cursor: default; }
   .hint { text-align: center; font-size: 12px; color: var(--ink-56); margin: 8px 0 0; }
 
+  /* Chat history sidebar */
+  .ask-layout { flex: 1; display: flex; min-height: 0; position: relative; }
+  .ask-main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .sidebar {
+    width: 272px; flex: none; display: flex; flex-direction: column; min-height: 0;
+    background: var(--paper); border-right: 1px solid var(--line);
+    transition: margin-left .2s ease;
+  }
+  .ask-layout.collapsed .sidebar { margin-left: -272px; visibility: hidden; transition: margin-left .2s ease, visibility 0s .2s; }
+  .sidebar-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 10px 18px; }
+  .sidebar-head .eyebrow { margin: 0; }
+  .history { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+  .history-group { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-56); padding: 14px 10px 6px; margin: 0; }
+  .history-item {
+    display: block; width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    padding: 8px 10px; border-radius: 6px; font-size: 14px; color: var(--ink-72);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: var(--wash); color: var(--ink); }
+  .history-item[aria-current="true"] { background: var(--blue-wash); color: var(--ink); font-weight: 500; }
+  .history-item .pending { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); margin-right: 8px; vertical-align: middle; animation: pulse 1.2s infinite; }
+  .history-empty { font-size: 14px; color: var(--ink-56); padding: 6px 10px; margin: 0; }
+  .history-note { font-size: 12px; color: var(--ink-56); margin: 0; padding: 10px 18px 14px; border-top: 1px solid var(--line); }
+  .icon-btn {
+    width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 6px;
+    border: 0; background: transparent; color: var(--ink-72); cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--wash); color: var(--ink); }
+  .chat-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); min-height: 56px; }
+  .ask-layout:not(.collapsed) #expand { display: none; }
+  .chat-title { font-size: 14px; font-weight: 500; color: var(--ink-72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .new-chat { margin-left: auto; padding: 7px 14px; font-size: 14px; flex: none; }
+  .new-chat[hidden] { display: none; }
+  .scrim { display: none; }
+  @media (max-width: 860px) {
+    .sidebar { position: absolute; z-index: 5; top: 0; bottom: 0; left: 0; box-shadow: 0 10px 40px rgba(27, 17, 38, .25); }
+    .ask-layout:not(.collapsed) .scrim { display: block; position: absolute; inset: 0; z-index: 4; background: rgba(27, 17, 38, .35); }
+  }
+
   /* Library view */
   .page { overflow-y: auto; flex: 1; padding: 44px 0 64px; }
   .library-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px; justify-content: space-between; }
@@ -247,33 +286,52 @@
 <main>
   <!-- Ask -->
   <section class="view" id="view-ask" aria-label="Ask">
-    <div id="thread">
-      <div class="wrap narrow messages" id="messages">
-        <div class="hero" id="hero">
-          <p class="eyebrow">Research Copilot</p>
-          <h1 class="display">Ask your research <em>anything</em></h1>
-          <p class="lede">Answers come only from your studies, and every claim links back to the participant quote it came from.</p>
-          <div class="suggestions">
-            <button class="suggestion" type="button"><span class="eyebrow">Findings</span><span>Why do users abandon checkout?</span></button>
-            <button class="suggestion" type="button"><span class="eyebrow">Check a hypothesis</span><span>Do people trust one-tap express checkout?</span></button>
-            <button class="suggestion" type="button"><span class="eyebrow">Themes</span><span>What are the most common complaints about delivery?</span></button>
-            <button class="suggestion" type="button"><span class="eyebrow">Out of scope</span><span>What do users think about dark mode?</span></button>
+    <div class="ask-layout" id="ask-layout">
+      <aside class="sidebar" id="sidebar" aria-label="Chat history">
+        <div class="sidebar-head">
+          <span class="eyebrow">Chat history</span>
+          <button class="icon-btn" id="collapse" type="button" aria-label="Hide chat history" title="Hide chat history"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
+        </div>
+        <div class="history" id="history"></div>
+        <p class="history-note">Saved in this browser only.</p>
+      </aside>
+      <div class="scrim" id="scrim" aria-hidden="true"></div>
+      <div class="ask-main">
+        <div class="chat-bar">
+          <button class="icon-btn" id="expand" type="button" aria-label="Show chat history" title="Show chat history" aria-controls="sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
+          <span class="chat-title" id="chat-title">New chat</span>
+          <button class="btn ghost new-chat" id="new-chat" type="button" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New chat</span></button>
+        </div>
+        <div id="thread">
+          <div class="wrap narrow messages" id="messages"></div>
+        </div>
+        <div class="composer-wrap">
+          <div class="wrap narrow">
+            <form class="composer" id="composer">
+              <label for="input" class="sr-only">Ask a question about the research</label>
+              <textarea id="input" rows="1" maxlength="2000" placeholder="Ask a question about the research…"></textarea>
+              <button class="send" id="send" type="submit" aria-label="Send" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+            </form>
+            <p class="hint">Each question is answered on its own. Enter to send, Shift+Enter for a new line.</p>
           </div>
         </div>
       </div>
     </div>
-    <div class="composer-wrap">
-      <div class="wrap narrow">
-        <form class="composer" id="composer">
-          <label for="input" class="sr-only">Ask a question about the research</label>
-          <textarea id="input" rows="1" maxlength="2000" placeholder="Ask a question about the research…"></textarea>
-          <button class="send" id="send" type="submit" aria-label="Send" disabled>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-          </button>
-        </form>
-        <p class="hint">Each question is answered on its own. Enter to send, Shift+Enter for a new line.</p>
+    <template id="hero-template">
+      <div class="hero">
+        <p class="eyebrow">Research Copilot</p>
+        <h1 class="display">Ask your research <em>anything</em></h1>
+        <p class="lede">Answers come only from your studies, and every claim links back to the participant quote it came from.</p>
+        <div class="suggestions">
+          <button class="suggestion" type="button"><span class="eyebrow">Findings</span><span>Why do users abandon checkout?</span></button>
+          <button class="suggestion" type="button"><span class="eyebrow">Check a hypothesis</span><span>Do people trust one-tap express checkout?</span></button>
+          <button class="suggestion" type="button"><span class="eyebrow">Themes</span><span>What are the most common complaints about delivery?</span></button>
+          <button class="suggestion" type="button"><span class="eyebrow">Out of scope</span><span>What do users think about dark mode?</span></button>
+        </div>
       </div>
-    </div>
+    </template>
   </section>
 
   <!-- Library -->
@@ -403,16 +461,30 @@
   window.addEventListener("hashchange", route);
 
   /* ---------- Ask ---------- */
+  // Chats live in this browser's localStorage. The backend is still stateless:
+  // every question is answered on its own, history is only for revisiting.
+  const CHATS_KEY = "rc.chats.v1", SIDEBAR_KEY = "rc.sidebar.collapsed", MAX_CHATS = 50;
   const thread = $("thread"), messages = $("messages"), input = $("input"), send = $("send");
+  const layout = $("ask-layout");
+  let chats = readStore(CHATS_KEY, []);
+  let activeId = null;  // null = a fresh chat that has not been saved yet
 
-  function scrollDown() { thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" }); }
-  function addMessage(role, children) {
-    $("hero")?.remove();
-    const bubble = el("div", { className: "bubble" }, children);
-    messages.append(el("div", { className: `msg ${role}` }, [bubble]));
-    scrollDown();
-    return bubble;
+  function readStore(key, fallback) {
+    try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; }
+    catch { return fallback; }
   }
+  function writeStore(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+  function saveChats() {
+    // Pending replies are never persisted; a reload mid-request just drops them.
+    writeStore(CHATS_KEY, chats.slice(0, MAX_CHATS).map((chat) => ({
+      ...chat, messages: chat.messages.filter((m) => !m.pending),
+    })).filter((chat) => chat.messages.length));
+  }
+  const activeChat = () => chats.find((chat) => chat.id === activeId) || null;
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+
+  function scrollDown(smooth = true) { thread.scrollTo({ top: thread.scrollHeight, behavior: smooth ? "smooth" : "auto" }); }
+
   function sourceCard(source) {
     const who = source.kind === "quote" ? source.speaker : source.kind === "document" ? "Study" : "Researcher";
     return el("a", { className: "source", href: studyLink(source.doc_id, source.kind === "document" ? null : source.chunk_id) }, [
@@ -425,7 +497,7 @@
       source.quote ? el("p", { className: "quote", textContent: source.quote }) : null,
     ]);
   }
-  function renderAnswer(bubble, data) {
+  function answerContent(data) {
     const status = data.status in STATUS ? data.status : "error";
     const parts = [
       el("span", { className: `chip status ${status}`, textContent: STATUS[status] }),
@@ -434,36 +506,123 @@
     ];
     const sources = data.sources || [];
     if (sources.length) {
-      const details = el("details", { className: "sources", open: status === "evidence_only" }, [
+      parts.push(el("details", { className: "sources", open: status === "evidence_only" }, [
         el("summary", { textContent: `${sources.length} source${sources.length === 1 ? "" : "s"}` }),
         el("div", { className: "source-list" }, sources.map(sourceCard)),
-      ]);
-      parts.push(details);
+      ]));
     }
-    bubble.replaceChildren(...parts);
-    scrollDown();
+    return parts;
   }
+  function messageNode(message) {
+    let content;
+    if (message.role === "user") content = [message.text];
+    else if (message.pending) content = [el("span", { className: "typing" }, [el("i"), el("i"), el("i"), el("span", { textContent: "Searching the research…" })])];
+    else content = answerContent(message.data);
+    return el("div", { className: `msg ${message.role === "user" ? "user" : "bot"}` }, [el("div", { className: "bubble" }, content)]);
+  }
+
+  function renderThread({ smooth = false } = {}) {
+    const chat = activeChat();
+    if (!chat || !chat.messages.length) {
+      const hero = $("hero-template").content.firstElementChild.cloneNode(true);
+      hero.querySelectorAll(".suggestion").forEach((button) =>
+        button.addEventListener("click", () => ask(button.lastElementChild.textContent)));
+      messages.replaceChildren(hero);
+      thread.scrollTo({ top: 0 });
+    } else {
+      messages.replaceChildren(...chat.messages.map(messageNode));
+      scrollDown(smooth);
+    }
+    $("chat-title").textContent = chat ? chat.title : "New chat";
+    $("new-chat").hidden = !chat || !chat.messages.length;
+    autosize();
+  }
+
+  function dayGroup(timestamp) {
+    const day = (t) => new Date(t).setHours(0, 0, 0, 0);
+    const days = Math.round((day(Date.now()) - day(timestamp)) / 86400000);
+    if (days <= 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return "Previous 7 days";
+    return "Older";
+  }
+  function renderHistory() {
+    const visible = chats.filter((chat) => chat.messages.length);
+    if (!visible.length) {
+      $("history").replaceChildren(el("p", { className: "history-empty", textContent: "Your questions will appear here." }));
+      return;
+    }
+    const nodes = [];
+    let group = null;
+    for (const chat of visible) {
+      const label = dayGroup(chat.updatedAt);
+      if (label !== group) { nodes.push(el("p", { className: "history-group", textContent: label })); group = label; }
+      const item = el("button", { type: "button", className: "history-item", title: chat.title, onclick: () => openChat(chat.id) }, [
+        chat.messages.some((m) => m.pending) ? el("span", { className: "pending", title: "Waiting for an answer" }) : null,
+        chat.title,
+      ]);
+      if (chat.id === activeId) item.setAttribute("aria-current", "true");
+      nodes.push(item);
+    }
+    $("history").replaceChildren(...nodes);
+  }
+
+  function isNarrow() { return matchMedia("(max-width: 860px)").matches; }
+  function setSidebar(collapsed, remember = true) {
+    layout.classList.toggle("collapsed", collapsed);
+    $("expand").setAttribute("aria-expanded", String(!collapsed));
+    if (remember && !isNarrow()) writeStore(SIDEBAR_KEY, collapsed);
+  }
+  function openChat(id) {
+    activeId = id;
+    if (location.hash && location.hash !== "#/") location.hash = "#/";
+    renderThread();
+    renderHistory();
+    if (isNarrow()) setSidebar(true, false);
+    input.focus();
+  }
+  function newChat() { openChat(null); }
+
   async function ask(question) {
     question = question.trim();
     if (busy || !question) return;
-    busy = true; send.disabled = true;
-    addMessage("user", [question]);
-    const bubble = addMessage("bot", [
-      el("span", { className: "typing" }, [el("i"), el("i"), el("i"), el("span", { textContent: "Searching the research…" })]),
-    ]);
+    let chat = activeChat();
+    if (!chat) {
+      chat = { id: newId(), title: question.length > 60 ? question.slice(0, 57) + "…" : question, messages: [], updatedAt: Date.now() };
+      chats.unshift(chat);
+      activeId = chat.id;
+    }
+    const pending = { role: "bot", pending: true };
+    chat.messages.push({ role: "user", text: question }, pending);
+    chat.updatedAt = Date.now();
+    busy = true;
+    renderThread({ smooth: true });
+    renderHistory();
+    saveChats();
+
+    let data;
     try {
       const response = await fetch("/ask", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ question }),
       });
       if (!response.ok) throw new Error(`The server returned ${response.status}. Please try again.`);
-      renderAnswer(bubble, await response.json());
+      data = await response.json();
     } catch (error) {
-      renderAnswer(bubble, { status: "error", answer: error.message });
-    } finally {
-      busy = false; autosize(); input.focus();
+      data = { status: "error", answer: error.message, sources: [], limitations: [] };
     }
+    // The user may have switched chats meanwhile; update the chat that asked.
+    chat.messages[chat.messages.indexOf(pending)] = { role: "bot", data };
+    chat.updatedAt = Date.now();
+    chats = [chat, ...chats.filter((c) => c !== chat)];
+    busy = false;
+    saveChats();
+    renderHistory();
+    if (chat.id === activeId) renderThread({ smooth: true });
+    else autosize();
+    input.focus();
   }
+
   function autosize() {
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 180) + "px";
@@ -479,8 +638,14 @@
     input.value = ""; autosize();
     ask(question);
   });
-  document.querySelectorAll(".suggestion").forEach((button) =>
-    button.addEventListener("click", () => ask(button.lastElementChild.textContent)));
+  $("new-chat").addEventListener("click", newChat);
+  $("collapse").addEventListener("click", () => setSidebar(true));
+  $("expand").addEventListener("click", () => setSidebar(false));
+  $("scrim").addEventListener("click", () => setSidebar(true, false));
+
+  setSidebar(isNarrow() ? true : readStore(SIDEBAR_KEY, false), false);
+  renderThread();
+  renderHistory();
 
   /* ---------- Library ---------- */
   async function renderLibrary() {
@@ -575,7 +740,7 @@
       el("div", { className: "actions" }, [
         el("button", {
           type: "button", className: "btn primary", textContent: "Ask about this study",
-          onclick: () => { location.hash = "#/"; input.value = `In ${study.title}, `; autosize(); input.focus(); },
+          onclick: () => { newChat(); input.value = `In ${study.title}, `; autosize(); input.focus(); },
         }),
         el("a", { className: "btn ghost", href: `/api/studies/${encodeURIComponent(study.id)}/markdown`, target: "_blank", rel: "noopener", textContent: "View markdown" }),
       ]),
