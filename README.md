@@ -43,7 +43,7 @@ export TYPESAFE_DEFAULT_MODEL=jev-latest   # optional
 
 `/` serves a single-page app:
 
-- **Ask**: a chat-style view. Each question is answered independently; answers show a status, limitations and collapsible sources, and each source links to its place in the transcript.
+- **Ask**: a chat-style view with a collapsible chat-history sidebar and a "New chat" button. History is stored in the browser (localStorage); the backend stays stateless and answers each question independently. Answers show a status, limitations and collapsible sources, and each source links to its place in the transcript.
 - **Library**: every study as a card (method, date, participants, excerpts), filterable by text, participant ID or method. Opening a study shows the transcript with moderator questions, participant quotes and researcher observations, plus a link to the raw markdown.
 
 Library endpoints: `GET /api/studies`, `GET /api/studies/{id}`, `GET /api/studies/{id}/markdown`.
